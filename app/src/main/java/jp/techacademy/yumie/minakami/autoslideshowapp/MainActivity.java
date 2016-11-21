@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -22,13 +23,14 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     private static final int PERMISSIONS_REQUEST_CODE = 100;
-    private Handler handler = new Handler();
-    private Timer tmr = new Timer();
+    private Handler handler;
+    private Timer tmr;
     ContentResolver resolver;
     Cursor cursor;
     Button bt_back;
     Button bt_next;
     Button bt_st1;
+    TextView mtextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ImageView imageVIEW = (ImageView) findViewById(R.id.imageView);
             imageVIEW.setImageURI(imageUri);
 
-            Log.d("LESSON5_8-3", "URI : "+ imageUri.toString());
+            Log.d("LESSON5_8-3", "URI : " + imageUri.toString());
         } else
             Log.d("LESSON5_8-3", "No image.");
  //       cursor.close();
@@ -108,56 +110,65 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
-            case R.id.button_back:
-                if(cursor.isFirst()) {
-                    cursor.moveToLast();
-                } else {
-                    cursor.moveToPrevious();
-                }
-                getContentsInfo(cursor);
-                break;
-            case R.id.button_next:
-                if(cursor.isLast())
-                    cursor.moveToFirst();
-                else
-                    cursor.moveToNext();
-                getContentsInfo(cursor);
-                break;
-            case R.id.button_ss:
-                Log.d("LESSON5_8-3", bt_st1.getText().toString());
-                if(bt_st1.getText().toString() == "再生"){
-                    bt_st1.setText("停止");
-                    bt_back.setEnabled(false);
-                    bt_next.setEnabled(false);
+        if(cursor.getCount() < 1){
+            TextView mtextView = (TextView) findViewById(R.id.textview1);
+            mtextView.setText("No Image.");
+        } else {
+            switch (v.getId()) {
+                case R.id.button_back:
+                    if (cursor.isFirst()) {
+                        cursor.moveToLast();
+                    } else {
+                        cursor.moveToPrevious();
+                    }
+                    getContentsInfo(cursor);
+                    break;
+                case R.id.button_next:
+                    if (cursor.isLast())
+                        cursor.moveToFirst();
+                    else
+                        cursor.moveToNext();
+                    getContentsInfo(cursor);
+                    break;
+                case R.id.button_ss:
+                    Log.d("LESSON5_8-3", bt_st1.getText().toString());
+                    if (bt_st1.getText().toString() == "再生") {
+                        bt_st1.setText("停止");
+                        bt_back.setEnabled(false);
+                        bt_next.setEnabled(false);
 
-                    tmr.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if(cursor.moveToNext())
-                                        getContentsInfo(cursor);
-                                    else {
-                                        cursor.moveToFirst();
-                                        getContentsInfo(cursor);
+                        tmr = new Timer();
+                        handler = new Handler();
+                        tmr.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (cursor.moveToNext())
+                                            getContentsInfo(cursor);
+                                        else {
+                                            cursor.moveToFirst();
+                                            getContentsInfo(cursor);
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
+                        }, 2000, 2000);
+                    } else {
+                        bt_st1.setText("再生");
+                        if(tmr != null){
+                            tmr.cancel();
+                            tmr = null;
                         }
-                    }, 2000, 2000);
-                }
-                else{
-                    bt_st1.setText("再生");
-                    tmr.cancel();
-                    bt_back.setEnabled(true);
-                    bt_next.setEnabled(true);
-                }
-                break;
-            default:
-                Log.d("LESSON5_8-3", "ERR");
-                break;
+                        bt_back.setEnabled(true);
+                        bt_next.setEnabled(true);
+                    }
+                    break;
+                default:
+                    Log.d("LESSON5_8-3", "ERR");
+                    break;
+            }
         }
 //        cursor.close();
     }
